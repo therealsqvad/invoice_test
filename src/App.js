@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 import Form from 'react-bootstrap/Form';
+import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
 import axios from 'axios';
 import { AsyncTypeahead } from 'react-bootstrap-typeahead';
+import 'react-bootstrap-typeahead/css/Typeahead-bs4.css';
 import './App.css';
 
 class App extends Component {
@@ -14,7 +16,9 @@ class App extends Component {
     patronymic: '',
     patronymics: [],
     isLoading: false,
-    multiple: false
+    multiple: false,
+    bsSize: 'large',
+    qc: true
   };
 
   getName = name => {
@@ -32,7 +36,7 @@ class App extends Component {
     };
 
     axios(options).then(response => {
-      console.log(response);
+      // console.log(response);
       const names = response.data.suggestions.map(i => ({ name: i.value }));
 
       this.setState({
@@ -60,7 +64,7 @@ class App extends Component {
     };
 
     axios(options).then(response => {
-      console.log(response);
+      // console.log(response);
       const surnames = response.data.suggestions.map(i => ({ surname: i.value }));
 
       this.setState({
@@ -88,7 +92,7 @@ class App extends Component {
     };
 
     axios(options).then(response => {
-      console.log(response);
+      // console.log(response);
       const patronymics = response.data.suggestions.map(i => ({ patronymic: i.value }));
 
       this.setState({
@@ -101,52 +105,109 @@ class App extends Component {
       });
   }
 
+  getFIO = () => {
+    const { surname, name, patronymic } = this.state;
+    const dataString = `{ "query": "${surname} ${name} ${patronymic}" }`;
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Token 951877a6c80c7c7e155ec7fbb785c94a4f58f594'
+      },
+      data: dataString,
+      url: 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party'
+    };
+
+    axios(options).then(response => {
+      console.log(response);
+      if (response.data.suggestions.length > 0) {
+        this.setState({
+          qc: false
+        });
+      }
+    })
+      .catch(error => {
+        console.log(error);
+      });
+  }
+
   render() {
     // const data = `${surname} ${name} ${patronymic}`;
 
     const { surnames, names, patronymics } = this.state;
+    const {
+      selectSurname, selectName, selectPatronymic, qc
+    } = this.state;
 
     return (
       <div className="App">
         <header className="App-header">
           <Form>
             <Form.Label>Введите ФИО</Form.Label>
-            <Form.Group>
-              <AsyncTypeahead
-                {...this.state}
-                id="surname"
-                labelKey="surname"
-                minLength={2}
-                onSearch={this.getItem}
-                placeholder="Фамилия"
-                options={surnames}
-              />
-            </Form.Group>
-            <Form.Group>
-              <AsyncTypeahead
-                {...this.state}
-                id="name"
-                labelKey="name"
-                minLength={2}
-                onSearch={this.getItem}
-                placeholder="Имя"
-                options={names}
-              />
-            </Form.Group>
-            <Form.Group>
-              <AsyncTypeahead
-                {...this.state}
-                id="patronymic"
-                labelKey="patronymic"
-                minLength={2}
-                onSearch={this.getItem}
-                placeholder="Отчество"
-                options={patronymics}
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit">
+            <Form.Row>
+              <Col>
+                <AsyncTypeahead
+                  {...this.state}
+                  id="surname"
+                  labelKey="surname"
+                  minLength={2}
+                  onSearch={this.getSurname}
+                  onChange={selected => {
+                    this.setState({ surname: selected[0].surname, selectSurname: selected });
+                  }}
+                  placeholder="Фамилия"
+                  options={surnames}
+                  selected={selectSurname}
+                />
+              </Col>
+              <Col>
+                <AsyncTypeahead
+                  {...this.state}
+                  id="name"
+                  labelKey="name"
+                  minLength={2}
+                  onSearch={this.getName}
+                  onChange={selected => {
+                    this.setState({ name: selected[0].name, selectName: selected });
+                  }}
+                  placeholder="Имя"
+                  options={names}
+                  selected={selectName}
+                />
+              </Col>
+              <Col>
+                <AsyncTypeahead
+                  {...this.state}
+                  id="patronymic"
+                  labelKey="patronymic"
+                  minLength={2}
+                  onSearch={this.getPatronymic}
+                  onChange={selected => {
+                    this.setState({ patronymic: selected[0].patronymic, selectPatronymic: selected });
+                  }}
+                  placeholder="Отчество"
+                  options={patronymics}
+                  selected={selectPatronymic}
+                />
+              </Col>
+            </Form.Row>
+            <Button variant="primary" type="button" onClick={this.getFIO}>
             Поиск
             </Button>
+          </Form>
+          <Form hidden={qc}>
+            <Form.Row>
+              <Col>
+                <Form.Control size="lg" placeholder="Название" />
+              </Col>
+              <Col>
+                <Form.Control size="lg" placeholder="ИНН" />
+              </Col>
+              <Col>
+                <Form.Control size="lg" placeholder="Адрес" />
+              </Col>
+            </Form.Row>
           </Form>
         </header>
       </div>
