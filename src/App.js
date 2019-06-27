@@ -20,7 +20,10 @@ class App extends Component {
     multiple: false,
     bsSize: 'large',
     qc: true,
-    show: false
+    show: false,
+    inn: '',
+    company: '',
+    adress: ''
   };
 
   getName = name => {
@@ -108,6 +111,7 @@ class App extends Component {
   };
 
   getFIO = () => {
+    this.setState({ inn: '', company: '', address: '' });
     const { surname, name, patronymic } = this.state;
     const dataString = `{ "query": "${surname} ${name} ${patronymic}" }`;
     const options = {
@@ -123,11 +127,13 @@ class App extends Component {
 
     axios(options)
       .then(response => {
-        console.log(response);
         if (response.data.suggestions.length > 0) {
           this.setState({
             qc: false
           });
+          const { inn, name: companyName, address } = response.data.suggestions[0].data;
+
+          this.setState({ inn, adress: address.value, company: companyName.full });
         } else {
           this.setState({ show: true, qc: true });
         }
@@ -150,6 +156,7 @@ class App extends Component {
       selectSurname, selectName, selectPatronymic, qc
     } = this.state;
     const { show } = this.state;
+    const { inn, adress, company } = this.state;
 
     return (
       <div className="App">
@@ -233,13 +240,16 @@ class App extends Component {
           <Form hidden={qc}>
             <Form.Row>
               <Col>
-                <Form.Control size="lg" placeholder="Название" />
+                <Form.Label>Название</Form.Label>
+                <Form.Control size="lg" placeholder="Название" value={company} readOnly />
               </Col>
               <Col>
-                <Form.Control size="lg" placeholder="ИНН" />
+                <Form.Label>ИНН</Form.Label>
+                <Form.Control size="lg" placeholder="ИНН" value={inn} readOnly />
               </Col>
               <Col>
-                <Form.Control size="lg" placeholder="Адрес" />
+                <Form.Label>Адрес</Form.Label>
+                <Form.Control size="lg" placeholder="Адрес" value={adress} readOnly />
               </Col>
             </Form.Row>
           </Form>
